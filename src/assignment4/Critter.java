@@ -23,6 +23,10 @@ public abstract class Critter {
 	private static String myPackage;
 	private static List<Critter> population = new java.util.ArrayList<Critter>();
 	private static List<Critter> babies = new java.util.ArrayList<Critter>();
+	private static List<Critter> moveHistory = new java.util.ArrayList<Critter>();
+	// map update in every call to Time step to update numbers of critter in each
+	// coordinates
+	private static int map[][] = new int[Params.world_height][Params.world_width];
 
 	// Gets the package name. This assumes that Critter and its subclasses are all
 	// in the same package.
@@ -39,6 +43,7 @@ public abstract class Critter {
 	public static void setSeed(long new_seed) {
 		rand = new java.util.Random(new_seed);
 	}
+
 
 	/*
 	 * a one-character long string that visually depicts your critter in the ASCII
@@ -58,13 +63,120 @@ public abstract class Critter {
 	private int y_coord;
 
 	protected final void walk(int direction) {
+		this.energy -= Params.walk_energy_cost;
+		if (moveHistory.contains(this)) {
+			return;
+		}
+		moveHistory.add(this);
+		if (this.energy <= 0) {
+			return;
+		}
+		switch (direction) {
+		case 0:
+			this.updateDir(1, 0);
+			break;
+		case 1:
+			this.updateDir(1, -1);
+			break;
+		case 2:
+			this.updateDir(0, -1);
+			break;
+		case 3:
+			this.updateDir(-1, -1);
+			break;
+		case 4:
+			this.updateDir(-1, 0);
+			break;
+		case 5:
+			this.updateDir(-1, 1);
+			break;
+		case 6:
+			this.updateDir(0, 1);
+			break;
+		case 7:
+			this.updateDir(1, 1);
+			break;
+		}
 	}
 
 	protected final void run(int direction) {
-
+		this.energy -= Params.run_energy_cost;
+		if (moveHistory.contains(this)) {
+			return;
+		}
+		moveHistory.add(this);
+		if (this.energy <= 0) {
+			return;
+		}
+		switch (direction) {
+		case 0:
+			this.updateDir(2, 0);
+			break;
+		case 1:
+			this.updateDir(2, -2);
+			break;
+		case 2:
+			this.updateDir(0, -2);
+			break;
+		case 3:
+			this.updateDir(-2, -2);
+			break;
+		case 4:
+			this.updateDir(-2, 0);
+			break;
+		case 5:
+			this.updateDir(-2, 2);
+			break;
+		case 6:
+			this.updateDir(0, 2);
+			break;
+		case 7:
+			this.updateDir(2, 2);
+			break;
+		}
 	}
 
 	protected final void reproduce(Critter offspring, int direction) {
+		if (offspring.energy < Params.min_reproduce_energy || offspring.energy <= 0) {
+			return;
+		}
+		try {
+			Class placeHolder = offspring.getClass();
+			Critter newBorn = (Critter) placeHolder.newInstance();
+			newBorn.energy = offspring.energy/2;
+			offspring.energy -= newBorn.energy;
+			newBorn.x_coord = offspring.x_coord;
+			newBorn.y_coord = offspring.y_coord;
+			switch (direction) {
+			case 0:
+				newBorn.updateDir(1, 0);
+				break;
+			case 1:
+				newBorn.updateDir(1, -1);
+				break;
+			case 2:
+				newBorn.updateDir(0, -1);
+				break;
+			case 3:
+				newBorn.updateDir(-1, -1);
+				break;
+			case 4:
+				newBorn.updateDir(-1, 0);
+				break;
+			case 5:
+				newBorn.updateDir(-1, 1);
+				break;
+			case 6:
+				newBorn.updateDir(0, 1);
+				break;
+			case 7:
+				newBorn.updateDir(1, 1);
+				break;
+			}
+			babies.add(newBorn);
+		} catch (Exception e) {
+			//throw new InvalidCritterException("haha");
+		}
 	}
 
 	public abstract void doTimeStep();
@@ -197,19 +309,22 @@ public abstract class Critter {
 	 * Clear the world of all critters, dead and alive
 	 */
 	public static void clearWorld() {
-		population.clear();	
+		population.clear();
 	}
 
 	public static void worldTimeStep() {
 		Critter temp;
 		java.util.ArrayList<Critter> samePlace = new java.util.ArrayList<Critter>();
-		for (Critter c: population) {
+		moveHistory.clear();
+		map = null;
+		for (Critter c : population) {
 			c.doTimeStep();
 		}
 		for (int w = 0; w < Params.world_width; w++) {
-			for (int h = 0; h < Params.world_height;h++) {
-				for (Critter c: population) {
+			for (int h = 0; h < Params.world_height; h++) {
+				for (Critter c : population) {
 					if ((c.x_coord == w) && (c.y_coord == h)) {
+						map[h][w]++;
 						samePlace.add(c);
 					}
 				}
@@ -218,8 +333,12 @@ public abstract class Critter {
 				}
 			}
 		}
-		for (Critter bay: babies) {
+		for (Critter bay : babies) {
 			population.add(bay);
+		}
+		babies.clear();
+		for (Critter c : population) {
+			c.energy -= Params.rest_energy_cost;
 		}
 		for (int i = 0; i < population.size(); i++) {
 			temp = population.get(i);
@@ -231,39 +350,130 @@ public abstract class Critter {
 	}
 
 	public static void displayWorld() {
-		String display[][] = new String[Params.world_height+2][Params.world_width+2];
+		String display[][] = new String[Params.world_height + 2][Params.world_width + 2];
 		display[0][0] = "+";
-		for(int w = 1;w < Params.world_width+1;w++) {
+		for (int w = 1; w < Params.world_width + 1; w++) {
 			display[0][w] = "-";
 		}
-		display[0][Params.world_width+1] = "+";
-		for(int h = 1;h < (Params.world_height+1);h++) {
+		display[0][Params.world_width + 1] = "+";
+		for (int h = 1; h < (Params.world_height + 1); h++) {
 			display[h][0] = "|";
-			for(int w = 1; w < (Params.world_width+1);w++) {
+			for (int w = 1; w < (Params.world_width + 1); w++) {
 				display[h][w] = " ";
 			}
-			display[h][Params.world_width+1] = "|";
+			display[h][Params.world_width + 1] = "|";
 		}
-		display[Params.world_height+1][0] = "+";
-		for(int w = 1;w < (Params.world_width+1);w++) {
-			display[Params.world_height+1][w] = "-";
+		display[Params.world_height + 1][0] = "+";
+		for (int w = 1; w < (Params.world_width + 1); w++) {
+			display[Params.world_height + 1][w] = "-";
 		}
-		display[Params.world_height+1][Params.world_width+1] = "+";
-		for(Critter c: population) {
-			display[c.x_coord+1][c.y_coord+1] = c.toString();
+		display[Params.world_height + 1][Params.world_width + 1] = "+";
+		for (Critter c : population) {
+			display[c.y_coord + 1][c.x_coord + 1] = c.toString();
 		}
-		for(int h= 0;h < (Params.world_height+2);h++) {
-			for(int w = 0;w < (Params.world_width+2);w++) {
+		for (int h = 0; h < (Params.world_height + 2); h++) {
+			for (int w = 0; w < (Params.world_width + 2); w++) {
 				System.out.print(display[h][w]);
 			}
 			System.out.println("");
 		}
 	}
-	
-	
+
 	private static java.util.ArrayList<Critter> encounter(java.util.ArrayList<Critter> list) {
-		return null;
-		//死的人的energy为负
+		Critter loser;
+		Critter critter1 = list.get(0);
+		Critter critter2 = list.get(1);
+		Boolean fight1 = critter1.fight(critter2.toString());
+		Boolean fight2 = critter2.fight(critter1.toString());
+		map[critter1.y_coord][critter1.x_coord]--;
+		if (fight1 && fight2) {
+			loser = battle(critter1, critter2);
+			loser.energy = -1;
+			list.remove(loser);
+		} else if (fight1 && !fight2) {
+			critter2.walk(getRandomInt(8));
+			if (map[critter2.y_coord][critter2.x_coord] >= 1) {
+				critter2.energy = -1;
+			} else {
+				map[critter2.y_coord][critter2.x_coord]++;
+			}
+			list.remove(critter2);
+		} else if (!fight1 && fight2) {
+			critter1.walk(getRandomInt(8));
+			if (map[critter1.y_coord][critter1.x_coord] >= 1) {
+				critter1.energy = -1;
+			} else {
+				map[critter1.y_coord][critter1.x_coord]++;
+			}
+			list.remove(critter1);
+		} else {
+			// x&y original position
+			int x = critter1.x_coord;
+			int y = critter1.y_coord;
+
+			critter1.walk(getRandomInt(8));
+			critter2.walk(getRandomInt(8));
+			if (map[critter1.y_coord][critter1.x_coord] >= 1 && map[critter2.y_coord][critter2.x_coord] >= 1) {
+				loser = battle(critter1, critter2);
+				loser.energy = -1;
+				list.remove(loser);
+				// winner in original place
+				list.get(0).x_coord = x;
+				list.get(0).y_coord = y;
+			} else if (map[critter2.y_coord][critter2.x_coord] >= 1) {
+				list.remove(critter1);
+				critter2.x_coord = x;
+				critter2.y_coord = y;
+				map[critter1.y_coord][critter1.x_coord]++;
+			} else if (map[critter1.y_coord][critter1.x_coord] >= 1) {
+				list.remove(critter2);
+				critter1.x_coord = x;
+				critter1.y_coord = y;
+				map[critter2.y_coord][critter2.x_coord]++;
+			} else {
+				if (critter1.x_coord == critter2.x_coord && critter1.y_coord == critter2.y_coord) {
+					critter2.x_coord = x;
+					critter2.y_coord = y;
+					list.remove(critter1);
+					map[critter1.y_coord][critter1.x_coord]++;
+				} else {
+					list.remove(critter1);
+					list.remove(critter2);
+					map[critter1.y_coord][critter1.x_coord]++;
+					map[critter2.y_coord][critter2.x_coord]++;
+					map[y][x]--;
+				}
+			}
+		}
+		return list;
 	}
 
+	private static Critter battle(Critter critter1, Critter critter2) {
+		int random1 = getRandomInt(critter1.energy);
+		int random2 = getRandomInt(critter2.energy);
+		if (random1 >= random2) {
+			critter1.energy += critter2.energy / 2;
+			return critter2;
+		} else {
+			critter2.energy += critter1.energy / 2;
+			return critter1;
+		}
+	}
+
+	private void updateDir(int xChange, int yChange) {
+		this.x_coord += xChange;
+		this.y_coord += yChange;
+		if (this.x_coord < 0) {
+			this.x_coord += Params.world_width;
+		}
+		if (this.x_coord > (Params.world_width - 1)) {
+			this.x_coord -= Params.world_width;
+		}
+		if (this.y_coord < 0) {
+			this.y_coord += Params.world_height;
+		}
+		if (this.y_coord > (Params.world_height - 1)) {
+			this.y_coord -= Params.world_height;
+		}
+	}
 }

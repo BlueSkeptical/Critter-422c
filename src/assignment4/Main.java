@@ -74,7 +74,6 @@ public class Main {
 		/* Write your code below. */
 		Scanner wordScanner;
 		String command;
-		int stepTimes;
 
 		while (true) {
 			System.out.print("critters> ");
@@ -82,14 +81,24 @@ public class Main {
 			wordScanner = new Scanner(inputL);
 			command = wordScanner.next();
 			if (command.equals("quit")) {
+				if(wordScanner.hasNext()) {
+					System.out.print("invalid command:" + inputL);
+					return;
+				}
 				return;
-			}
-			if (command.equals("show")) {
+			} else if (command.equals("show")) {
+				if(wordScanner.hasNext()) {
+					System.out.print("invalid command:" + inputL);
+					return;
+				}
 				Critter.displayWorld();
-			}
-			if (command.equals("step")) {
+			} else if (command.equals("step")) {
 				if (wordScanner.hasNext()) {
-					stepTimes = wordScanner.nextInt();
+					int stepTimes = wordScanner.nextInt();
+					if(wordScanner.hasNext()) {
+						System.out.print("invalid command:" + inputL);
+						return;
+					}
 					while (stepTimes > 0) {
 						Critter.worldTimeStep();
 						stepTimes--;
@@ -97,6 +106,55 @@ public class Main {
 				} else {
 					Critter.worldTimeStep();
 				}
+			} else if (command.equals("seed")) {
+				if(wordScanner.hasNext()) {
+					System.out.print("invalid command:" + inputL);
+					return;
+				}
+				int seedNum = wordScanner.nextInt();
+				Critter.setSeed(seedNum);
+			} else if (command.equals("make")) {
+				String className = wordScanner.next();
+				try {
+					if (wordScanner.hasNext()) {
+						int makeNum = wordScanner.nextInt();
+						if(wordScanner.hasNext()) {
+							System.out.print("invalid command:" + inputL);
+							return;
+						}
+						while (makeNum > 0) {
+							// ?? try/catch??
+							Critter.makeCritter(className);
+							makeNum--;
+						}
+					} else {
+						Critter.makeCritter(className);
+					}
+				} catch (Exception e) {
+					System.out.print("error processing:" + inputL);
+				}
+			} else if (command.equals("stats")) {
+				String className = wordScanner.next();
+				if(wordScanner.hasNext()) {
+					System.out.print("invalid command:" + inputL);
+					return;
+				}
+				try {
+					java.util.List<Critter> list = Critter.getInstances(className);
+					Class placeHolder = Class.forName(className);
+					java.lang.reflect.Method theMethod = placeHolder.getClass().getMethod("runStats");
+					theMethod.invoke(placeHolder, list);
+					// Critter
+					/*
+					 * for (int i = 0; i < list.size(); i++) { if
+					 * (!list.get(i).getClass().getName().equals(className)) { list.remove(i); i--;
+					 * } }
+					 */
+				} catch (Exception e) {
+					System.out.print("error processing:" + inputL);
+				}
+			} else {
+				System.out.print("invalid command:" + inputL);
 			}
 			wordScanner.close();
 			System.out.flush();
