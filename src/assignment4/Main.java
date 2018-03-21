@@ -82,13 +82,13 @@ public class Main {
 			command = wordScanner.next();
 			if (command.equals("quit")) {
 				if(wordScanner.hasNext()) {
-					System.out.print("invalid command:" + inputL);
+					System.out.println("error processing: " + inputL);
 					return;
 				}
 				return;
 			} else if (command.equals("show")) {
 				if(wordScanner.hasNext()) {
-					System.out.print("invalid command:" + inputL);
+					System.out.println("error processing: " + inputL);
 					return;
 				}
 				Critter.displayWorld();
@@ -96,7 +96,7 @@ public class Main {
 				if (wordScanner.hasNext()) {
 					int stepTimes = wordScanner.nextInt();
 					if(wordScanner.hasNext()) {
-						System.out.print("invalid command:" + inputL);
+						System.out.println("error processing: " + inputL);
 						return;
 					}
 					while (stepTimes > 0) {
@@ -108,7 +108,7 @@ public class Main {
 				}
 			} else if (command.equals("seed")) {
 				if(wordScanner.hasNext()) {
-					System.out.print("invalid command:" + inputL);
+					System.out.println("error processing: " + inputL);
 					return;
 				}
 				int seedNum = wordScanner.nextInt();
@@ -119,7 +119,7 @@ public class Main {
 					if (wordScanner.hasNext()) {
 						int makeNum = wordScanner.nextInt();
 						if(wordScanner.hasNext()) {
-							System.out.print("invalid command:" + inputL);
+							System.out.println("error processing: " + inputL);
 							return;
 						}
 						while (makeNum > 0) {
@@ -131,30 +131,27 @@ public class Main {
 						Critter.makeCritter(className);
 					}
 				} catch (Exception e) {
-					System.out.print("error processing:" + inputL);
+					System.out.println("error processing:" + inputL);
 				}
 			} else if (command.equals("stats")) {
 				String className = wordScanner.next();
 				if(wordScanner.hasNext()) {
-					System.out.print("invalid command:" + inputL);
+					System.out.println("error processing: " + inputL);
 					return;
 				}
 				try {
-					java.util.List<Critter> list = Critter.getInstances(className);
-					Class placeHolder = Class.forName(className);
-					java.lang.reflect.Method theMethod = placeHolder.getClass().getMethod("runStats");
-					theMethod.invoke(placeHolder, list);
-					// Critter
-					/*
-					 * for (int i = 0; i < list.size(); i++) { if
-					 * (!list.get(i).getClass().getName().equals(className)) { list.remove(i); i--;
-					 * } }
-					 */
+					String cName = myPackage.toString();
+					cName += ".";
+					cName += className;
+					java.util.List<Critter> list = Critter.getInstances(cName);
+					Class placeHolder = Class.forName(cName);
+					java.lang.reflect.Method theMethod = placeHolder.getMethod("runStats", java.util.List.class);
+					theMethod.invoke(placeHolder, list); 
 				} catch (Exception e) {
-					System.out.print("error processing:" + inputL);
+					System.out.println("error processing:" + inputL);
 				}
 			} else {
-				System.out.print("invalid command:" + inputL);
+				System.out.println("invalid command: " + inputL);
 			}
 			wordScanner.close();
 			System.out.flush();

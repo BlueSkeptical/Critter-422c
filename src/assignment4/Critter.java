@@ -44,7 +44,6 @@ public abstract class Critter {
 		rand = new java.util.Random(new_seed);
 	}
 
-
 	/*
 	 * a one-character long string that visually depicts your critter in the ASCII
 	 * interface
@@ -61,7 +60,19 @@ public abstract class Critter {
 
 	private int x_coord;
 	private int y_coord;
-
+	
+	protected void setX(int x){
+		this.x_coord = x;
+	}
+	
+	protected void setY(int y){
+		this.x_coord = y;
+	}
+	
+	protected void setEnergy(int energy){
+		this.energy = energy;
+	}
+	
 	protected final void walk(int direction) {
 		this.energy -= Params.walk_energy_cost;
 		if (moveHistory.contains(this)) {
@@ -143,7 +154,7 @@ public abstract class Critter {
 		try {
 			Class placeHolder = offspring.getClass();
 			Critter newBorn = (Critter) placeHolder.newInstance();
-			newBorn.energy = offspring.energy/2;
+			newBorn.energy = offspring.energy / 2;
 			offspring.energy -= newBorn.energy;
 			newBorn.x_coord = offspring.x_coord;
 			newBorn.y_coord = offspring.y_coord;
@@ -175,7 +186,7 @@ public abstract class Critter {
 			}
 			babies.add(newBorn);
 		} catch (Exception e) {
-			//throw new InvalidCritterException("haha");
+			// throw new InvalidCritterException("haha");
 		}
 	}
 
@@ -196,8 +207,16 @@ public abstract class Critter {
 	 */
 	public static void makeCritter(String critter_class_name) throws InvalidCritterException {
 		try {
-			Class placeHolder = Class.forName(critter_class_name);
+			int x = getRandomInt(Params.world_width);
+			int y = getRandomInt(Params.world_height);
+			String className = myPackage.toString();
+			className += ".";
+			className += critter_class_name;
+			Class placeHolder = Class.forName(className);
 			Critter general = (Critter) placeHolder.newInstance();
+			general.x_coord = x;
+			general.y_coord = y;
+			general.energy = Params.start_energy;
 			population.add(general);
 		} catch (Exception e) {
 			throw new InvalidCritterException(critter_class_name);
@@ -215,9 +234,16 @@ public abstract class Critter {
 	public static List<Critter> getInstances(String critter_class_name) throws InvalidCritterException {
 		try {
 			List<Critter> result = new java.util.ArrayList<Critter>();
-
+			String className = myPackage.toString();
+			if (!critter_class_name.contains(className)) {
+				className += ".";
+				className += critter_class_name;
+			} else {
+				className = critter_class_name;
+			}
 			for (Critter c : population) {
-				if (c.getClass().getName().equalsIgnoreCase(critter_class_name)) {
+				String s = c.getClass().getName();
+				if (c.getClass().getName().equalsIgnoreCase(className)) {
 					result.add(c);
 				}
 			}
@@ -316,12 +342,19 @@ public abstract class Critter {
 		Critter temp;
 		java.util.ArrayList<Critter> samePlace = new java.util.ArrayList<Critter>();
 		moveHistory.clear();
-		map = null;
+
+		for (int w = 0; w < Params.world_width; w++) {
+			for (int h = 0; h < Params.world_height; h++) {
+				map[h][w] = 0;
+			}
+		}
+
 		for (Critter c : population) {
 			c.doTimeStep();
 		}
 		for (int w = 0; w < Params.world_width; w++) {
 			for (int h = 0; h < Params.world_height; h++) {
+				samePlace.clear();
 				for (Critter c : population) {
 					if ((c.x_coord == w) && (c.y_coord == h)) {
 						map[h][w]++;
@@ -345,6 +378,12 @@ public abstract class Critter {
 			if (temp.getEnergy() <= 0) {
 				population.remove(temp);
 				i--;
+			}
+		}
+		for (int i = 0; i < Params.refresh_algae_count; i++) {
+			try {
+				makeCritter("Algae");
+			} catch (Exception e) {
 			}
 		}
 	}
@@ -383,9 +422,31 @@ public abstract class Critter {
 		Critter loser;
 		Critter critter1 = list.get(0);
 		Critter critter2 = list.get(1);
+		int oldX = critter1.x_coord;
+		int oldY = critter1.y_coord;
 		Boolean fight1 = critter1.fight(critter2.toString());
 		Boolean fight2 = critter2.fight(critter1.toString());
 		map[critter1.y_coord][critter1.x_coord]--;
+		if ((critter1.x_coord != oldX || critter1.y_coord != oldY)
+				&& (critter2.x_coord == oldX || critter2.y_coord == oldY)) {
+			map[critter1.y_coord][critter1.x_coord]++;
+			list.remove(critter1);
+			return list;
+		}
+		if ((critter2.x_coord != oldX || critter2.y_coord != oldY)
+				&& (critter1.x_coord == oldX || critter1.y_coord == oldY)) {
+			map[critter2.y_coord][critter2.x_coord]++;
+			list.remove(critter2);
+			return list;
+		}
+		if (critter2.x_coord != critter1.x_coord || critter2.y_coord != critter1.y_coord) {
+			map[oldY][oldX]--;
+			map[critter1.y_coord][critter1.x_coord]++;
+			map[critter2.y_coord][critter2.x_coord]++;
+			list.remove(critter2);
+			list.remove(critter1);
+			return list;
+		}
 		if (fight1 && fight2) {
 			loser = battle(critter1, critter2);
 			loser.energy = -1;
@@ -420,20 +481,24 @@ public abstract class Critter {
 				// winner in original place
 				list.get(0).x_coord = x;
 				list.get(0).y_coord = y;
+				list.get(0).energy += Params.walk_energy_cost;
 			} else if (map[critter2.y_coord][critter2.x_coord] >= 1) {
 				list.remove(critter1);
 				critter2.x_coord = x;
 				critter2.y_coord = y;
+				critter2.energy += Params.walk_energy_cost;
 				map[critter1.y_coord][critter1.x_coord]++;
 			} else if (map[critter1.y_coord][critter1.x_coord] >= 1) {
 				list.remove(critter2);
 				critter1.x_coord = x;
 				critter1.y_coord = y;
+				critter1.energy = Params.walk_energy_cost;
 				map[critter2.y_coord][critter2.x_coord]++;
 			} else {
 				if (critter1.x_coord == critter2.x_coord && critter1.y_coord == critter2.y_coord) {
 					critter2.x_coord = x;
 					critter2.y_coord = y;
+					critter2.energy += Params.walk_energy_cost;
 					list.remove(critter1);
 					map[critter1.y_coord][critter1.x_coord]++;
 				} else {
@@ -449,8 +514,17 @@ public abstract class Critter {
 	}
 
 	private static Critter battle(Critter critter1, Critter critter2) {
-		int random1 = getRandomInt(critter1.energy);
-		int random2 = getRandomInt(critter2.energy);
+		int random1;
+		int random2;
+
+		if (critter1.energy <= 0) {
+			return critter1;
+		}
+		if (critter2.energy <= 0) {
+			return critter2;
+		}
+		random1 = getRandomInt(critter1.energy);
+		random2 = getRandomInt(critter2.energy);
 		if (random1 >= random2) {
 			critter1.energy += critter2.energy / 2;
 			return critter2;
