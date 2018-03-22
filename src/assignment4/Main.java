@@ -1,15 +1,14 @@
 package assignment4;
-/* CRITTERS Main.java
+/* CRITTERS Critter.java
  * EE422C Project 4 submission by
- * Replace <...> with your actual data.
- * <Student1 Name>
- * <Student1 EID>
- * <Student1 5-digit Unique No.>
- * <Student2 Name>
- * <Student2 EID>
- * <Student2 5-digit Unique No.>
+ * Xin Geng
+ * xg2543
+ * 15465
+ * Zitian Xie
+ * zx2253
+ * 15465
  * Slip days used: <0>
- * Fall 2016
+ * Spring 2018
  */
 
 import java.util.Scanner;
@@ -77,17 +76,18 @@ public class Main {
 
 		while (true) {
 			System.out.print("critters> ");
+			// get the command
 			String inputL = kb.nextLine();
 			wordScanner = new Scanner(inputL);
 			command = wordScanner.next();
 			if (command.equals("quit")) {
-				if(wordScanner.hasNext()) {
+				if (wordScanner.hasNext()) {
 					System.out.println("error processing: " + inputL);
 					return;
 				}
 				return;
 			} else if (command.equals("show")) {
-				if(wordScanner.hasNext()) {
+				if (wordScanner.hasNext()) {
 					System.out.println("error processing: " + inputL);
 					return;
 				}
@@ -95,7 +95,7 @@ public class Main {
 			} else if (command.equals("step")) {
 				if (wordScanner.hasNext()) {
 					int stepTimes = wordScanner.nextInt();
-					if(wordScanner.hasNext()) {
+					if (wordScanner.hasNext()) {
 						System.out.println("error processing: " + inputL);
 						return;
 					}
@@ -107,7 +107,7 @@ public class Main {
 					Critter.worldTimeStep();
 				}
 			} else if (command.equals("seed")) {
-				if(wordScanner.hasNext()) {
+				if (wordScanner.hasNext()) {
 					System.out.println("error processing: " + inputL);
 					return;
 				}
@@ -118,12 +118,11 @@ public class Main {
 				try {
 					if (wordScanner.hasNext()) {
 						int makeNum = wordScanner.nextInt();
-						if(wordScanner.hasNext()) {
+						if (wordScanner.hasNext()) {
 							System.out.println("error processing: " + inputL);
 							return;
 						}
 						while (makeNum > 0) {
-							// ?? try/catch??
 							Critter.makeCritter(className);
 							makeNum--;
 						}
@@ -135,18 +134,20 @@ public class Main {
 				}
 			} else if (command.equals("stats")) {
 				String className = wordScanner.next();
-				if(wordScanner.hasNext()) {
+				if (wordScanner.hasNext()) {
 					System.out.println("error processing: " + inputL);
 					return;
 				}
 				try {
+					// get the right name
 					String cName = myPackage.toString();
 					cName += ".";
 					cName += className;
 					java.util.List<Critter> list = Critter.getInstances(cName);
 					Class placeHolder = Class.forName(cName);
+					// get the method from subclass
 					java.lang.reflect.Method theMethod = placeHolder.getMethod("runStats", java.util.List.class);
-					theMethod.invoke(placeHolder, list); 
+					theMethod.invoke(placeHolder, list);
 				} catch (Exception e) {
 					System.out.println("error processing:" + inputL);
 				}

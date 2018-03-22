@@ -1,15 +1,14 @@
 package assignment4;
 /* CRITTERS Critter.java
  * EE422C Project 4 submission by
- * Replace <...> with your actual data.
- * <Student1 Name>
- * <Student1 EID>
- * <Student1 5-digit Unique No.>
- * <Student2 Name>
- * <Student2 EID>
- * <Student2 5-digit Unique No.>
+ * Xin Geng
+ * xg2543
+ * 15465
+ * Zitian Xie
+ * zx2253
+ * 15465
  * Slip days used: <0>
- * Fall 2016
+ * Spring 2018
  */
 
 import java.util.List;
@@ -60,19 +59,41 @@ public abstract class Critter {
 
 	private int x_coord;
 	private int y_coord;
-	
-	protected void setX(int x){
+
+	/**
+	 * Modifier for the x_coord
+	 * 
+	 * @param x
+	 */
+	protected void setX(int x) {
 		this.x_coord = x;
 	}
-	
-	protected void setY(int y){
+
+	/**
+	 * Modifier for the y_coord
+	 * 
+	 * @param y
+	 */
+	protected void setY(int y) {
 		this.x_coord = y;
 	}
-	
-	protected void setEnergy(int energy){
+
+	/**
+	 * Modifier for the energy
+	 * 
+	 * @param energy
+	 */
+	protected void setEnergy(int energy) {
 		this.energy = energy;
 	}
-	
+
+	/**
+	 * update a critter's position with the input directions will not update if the
+	 * critter has already moved, if the critter will die because of the walk energy
+	 * cost, do not move it, energy still deducted
+	 * 
+	 * @param direction
+	 */
 	protected final void walk(int direction) {
 		this.energy -= Params.walk_energy_cost;
 		if (moveHistory.contains(this)) {
@@ -110,6 +131,13 @@ public abstract class Critter {
 		}
 	}
 
+	/**
+	 * update a critter's position with the input directions will not update if the
+	 * critter has already moved, if the critter will die because of the run energy
+	 * cost, do not move it, energy still deducted
+	 * 
+	 * @param direction
+	 */
 	protected final void run(int direction) {
 		this.energy -= Params.run_energy_cost;
 		if (moveHistory.contains(this)) {
@@ -147,6 +175,14 @@ public abstract class Critter {
 		}
 	}
 
+	/**
+	 * create a new instance of the given critter class, add it to the baby list,
+	 * location is determined by the input direction
+	 * 
+	 * @param offspring
+	 *            the parent
+	 * @param direction
+	 */
 	protected final void reproduce(Critter offspring, int direction) {
 		if (offspring.energy < Params.min_reproduce_energy || offspring.energy <= 0) {
 			return;
@@ -186,7 +222,6 @@ public abstract class Critter {
 			}
 			babies.add(newBorn);
 		} catch (Exception e) {
-			// throw new InvalidCritterException("haha");
 		}
 	}
 
@@ -209,6 +244,7 @@ public abstract class Critter {
 		try {
 			int x = getRandomInt(Params.world_width);
 			int y = getRandomInt(Params.world_height);
+			// make sure we have a qualified name
 			String className = myPackage.toString();
 			className += ".";
 			className += critter_class_name;
@@ -235,6 +271,7 @@ public abstract class Critter {
 		try {
 			List<Critter> result = new java.util.ArrayList<Critter>();
 			String className = myPackage.toString();
+			// make sure we have a qualified name
 			if (!critter_class_name.contains(className)) {
 				className += ".";
 				className += critter_class_name;
@@ -338,20 +375,26 @@ public abstract class Critter {
 		population.clear();
 	}
 
+	/**
+	 * run the worldTimeStep method specified in the pdf
+	 */
 	public static void worldTimeStep() {
-		Critter temp;
+		Critter temp; // place holder
 		java.util.ArrayList<Critter> samePlace = new java.util.ArrayList<Critter>();
-		moveHistory.clear();
+		// A list that contains Critters at the same place
 
+		// Initialization
+		moveHistory.clear();
 		for (int w = 0; w < Params.world_width; w++) {
 			for (int h = 0; h < Params.world_height; h++) {
 				map[h][w] = 0;
 			}
 		}
-
+		// do time step
 		for (Critter c : population) {
 			c.doTimeStep();
 		}
+		// solve encounters
 		for (int w = 0; w < Params.world_width; w++) {
 			for (int h = 0; h < Params.world_height; h++) {
 				samePlace.clear();
@@ -366,13 +409,16 @@ public abstract class Critter {
 				}
 			}
 		}
+		// add baby
 		for (Critter bay : babies) {
 			population.add(bay);
 		}
 		babies.clear();
+		// apply energy cost
 		for (Critter c : population) {
 			c.energy -= Params.rest_energy_cost;
 		}
+		// kill the dead
 		for (int i = 0; i < population.size(); i++) {
 			temp = population.get(i);
 			if (temp.getEnergy() <= 0) {
@@ -380,6 +426,7 @@ public abstract class Critter {
 				i--;
 			}
 		}
+		// add Algae
 		for (int i = 0; i < Params.refresh_algae_count; i++) {
 			try {
 				makeCritter("Algae");
@@ -388,7 +435,11 @@ public abstract class Critter {
 		}
 	}
 
+	/**
+	 * display the World specified in pdf
+	 */
 	public static void displayWorld() {
+		// size is world height and width plus 2 for the edges
 		String display[][] = new String[Params.world_height + 2][Params.world_width + 2];
 		display[0][0] = "+";
 		for (int w = 1; w < Params.world_width + 1; w++) {
@@ -407,6 +458,7 @@ public abstract class Critter {
 			display[Params.world_height + 1][w] = "-";
 		}
 		display[Params.world_height + 1][Params.world_width + 1] = "+";
+		// add critters to the world
 		for (Critter c : population) {
 			display[c.y_coord + 1][c.x_coord + 1] = c.toString();
 		}
@@ -418,6 +470,13 @@ public abstract class Critter {
 		}
 	}
 
+	/**
+	 * Solving encounters specified in pdf
+	 * 
+	 * @param list
+	 *            all critters who is in the same spot
+	 * @return a list of critters remain in the same spot
+	 */
 	private static java.util.ArrayList<Critter> encounter(java.util.ArrayList<Critter> list) {
 		Critter loser;
 		Critter critter1 = list.get(0);
@@ -426,7 +485,9 @@ public abstract class Critter {
 		int oldY = critter1.y_coord;
 		Boolean fight1 = critter1.fight(critter2.toString());
 		Boolean fight2 = critter2.fight(critter1.toString());
+
 		map[critter1.y_coord][critter1.x_coord]--;
+		// if a critter move during fighting
 		if ((critter1.x_coord != oldX || critter1.y_coord != oldY)
 				&& (critter2.x_coord == oldX || critter2.y_coord == oldY)) {
 			map[critter1.y_coord][critter1.x_coord]++;
@@ -447,6 +508,7 @@ public abstract class Critter {
 			list.remove(critter1);
 			return list;
 		}
+		// solve conflicts of two critters
 		if (fight1 && fight2) {
 			loser = battle(critter1, critter2);
 			loser.energy = -1;
@@ -474,6 +536,7 @@ public abstract class Critter {
 
 			critter1.walk(getRandomInt(8));
 			critter2.walk(getRandomInt(8));
+			// if both choose to run away
 			if (map[critter1.y_coord][critter1.x_coord] >= 1 && map[critter2.y_coord][critter2.x_coord] >= 1) {
 				loser = battle(critter1, critter2);
 				loser.energy = -1;
@@ -496,6 +559,7 @@ public abstract class Critter {
 				map[critter2.y_coord][critter2.x_coord]++;
 			} else {
 				if (critter1.x_coord == critter2.x_coord && critter1.y_coord == critter2.y_coord) {
+					// both critters move to the same
 					critter2.x_coord = x;
 					critter2.y_coord = y;
 					critter2.energy += Params.walk_energy_cost;
@@ -513,6 +577,13 @@ public abstract class Critter {
 		return list;
 	}
 
+	/**
+	 * solve fight specified in pdf
+	 * 
+	 * @param critter1
+	 * @param critter2
+	 * @return the loser
+	 */
 	private static Critter battle(Critter critter1, Critter critter2) {
 		int random1;
 		int random2;
@@ -534,6 +605,12 @@ public abstract class Critter {
 		}
 	}
 
+	/**
+	 * called in run and walk, handle the situation of one critter run off the edge
+	 * 
+	 * @param xChange
+	 * @param yChange
+	 */
 	private void updateDir(int xChange, int yChange) {
 		this.x_coord += xChange;
 		this.y_coord += yChange;
